@@ -5,13 +5,44 @@ import MemoryCard from '../components/MemoryCard';
 import ScrollableRow from '../components/ScrollableRow';
 import Button from '../components/Button';
 import ResponsiveImage from '../components/ResponsiveImage';
+import MemoryCardDetail from '../components/MemoryCardDetail';
+import ShareModal from '../components/ShareModal';
+import Toast from '../components/Toast';
 import { memories, categories, popularSearches } from '../mocks/memories';
+import useCollection from '../hooks/useCollection';
+import useShare from '../hooks/useShare';
+import useToast from '../hooks/useToast';
+import { findSimilarItems } from '../utils/similarItems';
 
 const Home = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [featuredMemory, setFeaturedMemory] = useState(memories[0]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMemory, setSelectedMemory] = useState<string | null>(null);
+  
+  // Custom hooks
+  const { 
+    collection, 
+    addToCollection, 
+    isInCollection, 
+    isRecentlyAdded 
+  } = useCollection();
+  
+  const {
+    isShareModalOpen,
+    openShareModal,
+    closeShareModal,
+    getShareMemory,
+    shareViaWebAPI,
+    shareViaPlatform
+  } = useShare(memories);
+  
+  const {
+    toast,
+    hideToast,
+    showSuccessToast
+  } = useToast();
   
   // Simulate loading state
   useEffect(() => {
@@ -45,17 +76,37 @@ const Home = () => {
   };
   
   const handleAddToCollection = (id: string) => {
-    console.log('Added to collection:', id);
-    // In a real app, this would add the item to the user's collection
+    addToCollection(id);
+    showSuccessToast(`Added to your collection!`);
   };
   
   const handleShare = (id: string) => {
-    console.log('Shared:', id);
-    // In a real app, this would open a share dialog
+    openShareModal(id);
+  };
+  
+  const handleCardClick = (id: string) => {
+    setSelectedMemory(id);
+  };
+  
+  const handleCloseDetail = () => {
+    setSelectedMemory(null);
   };
   
   const handleCategoryClick = (categoryId: string) => {
     navigate(`/category/${categoryId}`);
+  };
+  
+  // Get the selected memory details
+  const getSelectedMemoryDetails = () => {
+    if (!selectedMemory) return null;
+    return memories.find(memory => memory.id === selectedMemory);
+  };
+  
+  // Get similar items for the selected memory
+  const getSimilarItems = () => {
+    const memory = getSelectedMemoryDetails();
+    if (!memory) return [];
+    return findSimilarItems(memory, memories);
   };
   
   // Group memories by category
@@ -97,16 +148,22 @@ const Home = () => {
             </p>
             <div className="flex flex-wrap gap-3">
               <Button 
-                variant="primary" 
+                variant={isInCollection(featuredMemory.id) ? "success" : "primary"}
                 size="lg"
                 onClick={() => handleAddToCollection(featuredMemory.id)}
                 icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                  </svg>
+                  isInCollection(featuredMemory.id) ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                    </svg>
+                  )
                 }
               >
-                Add to Collection
+                {isInCollection(featuredMemory.id) ? 'In Collection' : 'Add to Collection'}
               </Button>
               <Button 
                 variant="outline" 
@@ -172,8 +229,11 @@ const Home = () => {
                   imageUrl={memory.imageUrl}
                   category={memory.category}
                   year={memory.year}
+                  isInCollection={isInCollection(memory.id)}
+                  isRecentlyAdded={isRecentlyAdded(memory.id)}
                   onAddToCollection={handleAddToCollection}
                   onShare={handleShare}
+                  onClick={handleCardClick}
                 />
               </div>
             ))}
@@ -197,6 +257,35 @@ const Home = () => {
           </Link>
         </div>
       </div>
+      
+      {/* Memory detail modal */}
+      {selectedMemory && (
+        <MemoryCardDetail
+          memory={getSelectedMemoryDetails()!}
+          similarItems={getSimilarItems()}
+          isOpen={!!selectedMemory}
+          onClose={handleCloseDetail}
+          onAddToCollection={handleAddToCollection}
+          onShare={handleShare}
+        />
+      )}
+      
+      {/* Share modal */}
+      <ShareModal
+        memory={getShareMemory()}
+        isOpen={isShareModalOpen}
+        onClose={closeShareModal}
+        onShareViaPlatform={shareViaPlatform}
+        onShareViaWebAPI={shareViaWebAPI}
+      />
+      
+      {/* Toast notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
     </div>
   );
 };

@@ -46,12 +46,13 @@ Check file .cursor-tasks.md for the task management. Start woring on the first u
 Alaways try to run the project after completing a task to see if it works as expected.
 yarn dev.
 
+Then mark the current checkpoint part as completed in the .cursor-tasks.md file.
+
 After completing a task, commit all changes:
 ```bash
 git add .
 git commit -m "Commit message"
 ```
 
-Then mark the current checkpoint part as completed in the .cursor-tasks.md file.
 Ask the the user if you can proceed to the next task.
 
