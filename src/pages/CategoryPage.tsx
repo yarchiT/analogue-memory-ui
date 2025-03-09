@@ -1,77 +1,116 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { memories, categories } from '../mocks/memories';
 import MemoryCard from '../components/MemoryCard';
 import Button from '../components/Button';
 import SearchBar from '../components/SearchBar';
 import CategoryHeader from '../components/CategoryHeader';
+import useApi from '../hooks/useApi';
+import { getCategoryById } from '../services/categoryService';
+import { getItemsByCategory } from '../services/memoryService';
+import { mapApiCategoryToCategory, mapApiItemToMemory } from '../utils/apiMappers';
+import useCollection from '../hooks/useCollection';
+import useToast from '../hooks/useToast';
+import Skeleton from '../components/Skeleton';
 
 const CategoryPage = () => {
   const { categoryId } = useParams<{ categoryId: string }>();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredMemories, setFilteredMemories] = useState<typeof memories>([]);
+  const [filteredMemories, setFilteredMemories] = useState<any[]>([]);
   
-  // Find the current category
-  const category = categories.find(cat => cat.id === categoryId);
+  // API data fetching
+  const { 
+    data: apiCategory, 
+    isLoading: isCategoryLoading, 
+    error: categoryError 
+  } = useApi(() => getCategoryById(categoryId || ''), {
+    dependencies: [categoryId]
+  });
   
-  // Simulate loading state
-  useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    
-    return () => clearTimeout(timer);
-  }, [categoryId]);
+  const { 
+    data: apiItems, 
+    isLoading: isItemsLoading, 
+    error: itemsError 
+  } = useApi(() => getItemsByCategory(categoryId || ''), {
+    dependencies: [categoryId]
+  });
   
-  // Filter memories by category
-  useEffect(() => {
-    if (!categoryId) return;
-    
-    const filtered = memories.filter(memory => 
-      memory.category.toLowerCase() === category?.name.toLowerCase()
-    );
-    
-    setFilteredMemories(filtered);
-  }, [categoryId, category]);
+  // Convert API data to frontend models
+  const category = apiCategory ? mapApiCategoryToCategory(apiCategory) : undefined;
+  const memories = apiItems?.map(mapApiItemToMemory) || [];
   
-  // Handle search within category
+  // Custom hooks
+  const { 
+    addToCollection, 
+    isInCollection, 
+    isRecentlyAdded 
+  } = useCollection();
+  
+  const {
+    showSuccessToast
+  } = useToast();
+  
+  // Filter memories by search query
   useEffect(() => {
     if (!searchQuery) {
-      // If no search query, show all memories for this category
-      const filtered = memories.filter(memory => 
-        memory.category.toLowerCase() === category?.name.toLowerCase()
-      );
-      setFilteredMemories(filtered);
+      setFilteredMemories(memories);
       return;
     }
     
-    // Filter by search query and category
+    // Filter by search query
     const filtered = memories.filter(memory => 
-      memory.category.toLowerCase() === category?.name.toLowerCase() &&
-      (memory.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       memory.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       memory.year.toString().includes(searchQuery))
+      memory.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      memory.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      memory.year.toString().includes(searchQuery)
     );
     
     setFilteredMemories(filtered);
-  }, [searchQuery, category]);
+  }, [searchQuery, memories]);
+  
+  // Set initial filtered memories
+  useEffect(() => {
+    setFilteredMemories(memories);
+  }, [memories]);
   
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
   
   const handleAddToCollection = (id: string) => {
-    console.log('Added to collection:', id);
-    // In a real app, this would add the item to the user's collection
+    addToCollection(id);
+    showSuccessToast(`Added to your collection!`);
   };
   
   const handleShare = (id: string) => {
     console.log('Shared:', id);
     // In a real app, this would open a share dialog
   };
+  
+  // Loading state
+  const isLoading = isCategoryLoading || isItemsLoading;
+  
+  // Error state
+  const hasError = categoryError || itemsError;
+  
+  // If there's an error, show error message
+  if (hasError && !isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center p-8 max-w-md">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Data</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            {categoryError?.message || itemsError?.message || 'Failed to load data from the server.'}
+          </p>
+          <Button 
+            variant="primary" 
+            onClick={() => window.location.reload()}
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
   
   // If category doesn't exist, redirect to home
   if (!category && !isLoading) {
@@ -104,7 +143,7 @@ const CategoryPage = () => {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, index) => (
-              <div key={index} className="bg-gray-200 dark:bg-gray-700 rounded-lg h-80 animate-pulse"></div>
+              <Skeleton key={index} className="h-80 rounded-lg" />
             ))}
           </div>
         ) : (
@@ -119,6 +158,8 @@ const CategoryPage = () => {
                     imageUrl={memory.imageUrl}
                     category={memory.category}
                     year={memory.year}
+                    isInCollection={isInCollection(memory.id)}
+                    isRecentlyAdded={isRecentlyAdded(memory.id)}
                     onAddToCollection={handleAddToCollection}
                     onShare={handleShare}
                   />

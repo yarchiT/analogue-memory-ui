@@ -8,18 +8,39 @@ import ResponsiveImage from '../components/ResponsiveImage';
 import MemoryCardDetail from '../components/MemoryCardDetail';
 import ShareModal from '../components/ShareModal';
 import Toast from '../components/Toast';
-import { memories, categories, popularSearches } from '../mocks/memories';
+import { popularSearches } from '../mocks/memories';
 import useCollection from '../hooks/useCollection';
 import useShare from '../hooks/useShare';
 import useToast from '../hooks/useToast';
 import { findSimilarItems } from '../utils/similarItems';
+import useApi from '../hooks/useApi';
+import { getAllCategories } from '../services/categoryService';
+import { getAllItems, getItemsByCategory } from '../services/memoryService';
+import { mapApiCategoryToCategory, mapApiItemToMemory } from '../utils/apiMappers';
+import Skeleton from '../components/Skeleton';
 
 const Home = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [featuredMemory, setFeaturedMemory] = useState(memories[0]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [featuredMemory, setFeaturedMemory] = useState<any>(null);
   const [selectedMemory, setSelectedMemory] = useState<string | null>(null);
+  
+  // API data fetching
+  const { 
+    data: apiCategories, 
+    isLoading: isCategoriesLoading, 
+    error: categoriesError 
+  } = useApi(getAllCategories);
+  
+  const { 
+    data: apiItems, 
+    isLoading: isItemsLoading, 
+    error: itemsError 
+  } = useApi(getAllItems);
+  
+  // Convert API data to frontend models
+  const categories = apiCategories?.map(mapApiCategoryToCategory) || [];
+  const memories = apiItems?.map(mapApiItemToMemory) || [];
   
   // Custom hooks
   const { 
@@ -44,17 +65,17 @@ const Home = () => {
     showSuccessToast
   } = useToast();
   
-  // Simulate loading state
+  // Set featured memory when data is loaded
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
+    if (memories.length > 0 && !featuredMemory) {
+      setFeaturedMemory(memories[0]);
+    }
+  }, [memories, featuredMemory]);
   
   // Randomly select a featured memory every 30 seconds
   useEffect(() => {
+    if (memories.length === 0) return;
+    
     const selectRandomFeaturedMemory = () => {
       const randomIndex = Math.floor(Math.random() * memories.length);
       setFeaturedMemory(memories[randomIndex]);
@@ -67,7 +88,7 @@ const Home = () => {
     const interval = setInterval(selectRandomFeaturedMemory, 30000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [memories]);
   
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -118,6 +139,85 @@ const Home = () => {
       )
     };
   }).filter(category => category.items.length > 0);
+  
+  // Loading state
+  const isLoading = isCategoriesLoading || isItemsLoading;
+  
+  // Error state
+  const hasError = categoriesError || itemsError;
+  
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center p-8 max-w-md">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Data</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            {categoriesError?.message || itemsError?.message || 'Failed to load data from the server.'}
+          </p>
+          <Button 
+            variant="primary" 
+            onClick={() => window.location.reload()}
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  // Loading skeleton
+  if (isLoading || !featuredMemory) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Hero section skeleton */}
+        <div className="relative h-[70vh] min-h-[500px] w-full overflow-hidden bg-gray-200 dark:bg-gray-800">
+          <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-end pb-16">
+            <div className="max-w-2xl">
+              <Skeleton className="h-8 w-24 mb-3" />
+              <Skeleton className="h-16 w-full mb-3" />
+              <Skeleton className="h-6 w-3/4 mb-6" />
+              <div className="flex gap-3">
+                <Skeleton className="h-12 w-48" />
+                <Skeleton className="h-12 w-32" />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Search section skeleton */}
+        <div className="relative bg-white dark:bg-gray-800 shadow-md">
+          <div className="container mx-auto px-4 py-6">
+            <div className="max-w-3xl mx-auto">
+              <Skeleton className="h-14 w-full rounded-full" />
+            </div>
+          </div>
+        </div>
+        
+        {/* Category buttons skeleton */}
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-wrap gap-3 justify-center">
+            {Array(6).fill(0).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-24 rounded-full" />
+            ))}
+          </div>
+        </div>
+        
+        {/* Category rows skeleton */}
+        <div className="container mx-auto px-4 pb-16">
+          {Array(3).fill(0).map((_, i) => (
+            <div key={i} className="mb-8">
+              <Skeleton className="h-8 w-48 mb-4" />
+              <div className="flex gap-4 overflow-x-auto pb-4">
+                {Array(5).fill(0).map((_, j) => (
+                  <Skeleton key={j} className="min-w-[250px] h-[350px] rounded-lg" />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -248,22 +348,25 @@ const Home = () => {
             Start Building Your Collection
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-8">
-            Sign up today to create your personal memory library and connect with others.
+            Discover and collect your favorite childhood memories. Compare with friends and see what you have in common.
           </p>
-          <Link to="/login">
-            <Button variant="primary" size="lg">
-              Get Started
-            </Button>
-          </Link>
+          <Button 
+            variant="primary" 
+            size="lg"
+            onClick={() => navigate('/browse')}
+          >
+            Explore All Categories
+          </Button>
         </div>
       </div>
       
       {/* Memory detail modal */}
       {selectedMemory && (
         <MemoryCardDetail
-          memory={getSelectedMemoryDetails()!}
+          memory={getSelectedMemoryDetails() || undefined}
           similarItems={getSimilarItems()}
           isOpen={!!selectedMemory}
+          isInCollection={isInCollection(selectedMemory)}
           onClose={handleCloseDetail}
           onAddToCollection={handleAddToCollection}
           onShare={handleShare}
@@ -271,21 +374,25 @@ const Home = () => {
       )}
       
       {/* Share modal */}
-      <ShareModal
-        memory={getShareMemory()}
-        isOpen={isShareModalOpen}
-        onClose={closeShareModal}
-        onShareViaPlatform={shareViaPlatform}
-        onShareViaWebAPI={shareViaWebAPI}
-      />
+      {isShareModalOpen && (
+        <ShareModal
+          memory={getShareMemory()}
+          isOpen={isShareModalOpen}
+          onClose={closeShareModal}
+          onShareViaWebAPI={shareViaWebAPI}
+          onShareViaPlatform={shareViaPlatform}
+        />
+      )}
       
       {/* Toast notification */}
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={hideToast}
-      />
+      {toast.isVisible && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.isVisible}
+          onClose={hideToast}
+        />
+      )}
     </div>
   );
 };

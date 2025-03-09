@@ -4,12 +4,13 @@ import Button from './Button';
 import ResponsiveImage from './ResponsiveImage';
 
 interface MemoryCardDetailProps {
-  memory: Memory;
+  memory: Memory | undefined;
   similarItems: Memory[];
   isOpen: boolean;
   onClose: () => void;
   onAddToCollection: (id: string) => void;
   onShare: (id: string) => void;
+  isInCollection?: boolean;
 }
 
 const MemoryCardDetail = ({
@@ -58,7 +59,7 @@ const MemoryCardDetail = ({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !memory) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm transition-opacity duration-300">
@@ -92,8 +93,8 @@ const MemoryCardDetail = ({
             <div className="w-full md:w-1/2">
               <div className="rounded-lg overflow-hidden">
                 <ResponsiveImage
-                  src={memory.imageUrl}
-                  alt={memory.title}
+                  src={memory?.imageUrl}
+                  alt={memory?.title}
                   aspectRatio="16:9"
                   className="w-full h-auto"
                 />
@@ -103,26 +104,26 @@ const MemoryCardDetail = ({
             {/* Details */}
             <div className="w-full md:w-1/2">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                {memory.title}
+                {memory?.title}
               </h3>
               
               <div className="flex items-center gap-2 mb-4">
                 <span className="px-2 py-1 bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 text-sm font-medium rounded">
-                  {memory.category}
+                  {memory?.category}
                 </span>
                 <span className="text-gray-600 dark:text-gray-400">
-                  {memory.year}
+                  {memory?.year}
                 </span>
               </div>
               
               <p className="text-gray-700 dark:text-gray-300 mb-6">
-                {memory.description || `A nostalgic ${memory.category.toLowerCase()} from ${memory.year}.`}
+                {memory?.description || `A nostalgic ${memory?.category.toLowerCase()} from ${memory?.year}.`}
               </p>
               
               <div className="flex flex-wrap gap-3">
                 <Button
                   variant="primary"
-                  onClick={() => onAddToCollection(memory.id)}
+                  onClick={() => onAddToCollection(memory?.id || '')}
                   icon={
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -134,7 +135,7 @@ const MemoryCardDetail = ({
                 
                 <Button
                   variant="outline"
-                  onClick={() => onShare(memory.id)}
+                  onClick={() => onShare(memory?.id || '')}
                   icon={
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />

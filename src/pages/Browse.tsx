@@ -1,16 +1,39 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { memories, categories } from '../mocks/memories';
 import MemoryCard from '../components/MemoryCard';
 import SearchBar from '../components/SearchBar';
 import CategoryHeader from '../components/CategoryHeader';
+import useApi from '../hooks/useApi';
+import { getAllCategories } from '../services/categoryService';
+import { getAllItems } from '../services/memoryService';
+import { mapApiCategoryToCategory, mapApiItemToMemory } from '../utils/apiMappers';
+import useCollection from '../hooks/useCollection';
+import useToast from '../hooks/useToast';
+import Skeleton from '../components/Skeleton';
+import Button from '../components/Button';
 
 const Browse = () => {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredMemories, setFilteredMemories] = useState(memories);
-  const [isLoading, setIsLoading] = useState(true);
+  const [filteredMemories, setFilteredMemories] = useState<any[]>([]);
+  
+  // API data fetching
+  const { 
+    data: apiCategories, 
+    isLoading: isCategoriesLoading, 
+    error: categoriesError 
+  } = useApi(getAllCategories);
+  
+  const { 
+    data: apiItems, 
+    isLoading: isItemsLoading, 
+    error: itemsError 
+  } = useApi(getAllItems);
+  
+  // Convert API data to frontend models
+  const categories = apiCategories?.map(mapApiCategoryToCategory) || [];
+  const memories = apiItems?.map(mapApiItemToMemory) || [];
   
   // Add "All" category to the list
   const allCategories = [
@@ -18,18 +41,21 @@ const Browse = () => {
     ...categories
   ];
   
-  // Simulate loading state
-  useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    
-    return () => clearTimeout(timer);
-  }, [activeCategory]);
+  // Custom hooks
+  const { 
+    addToCollection, 
+    isInCollection, 
+    isRecentlyAdded 
+  } = useCollection();
+  
+  const {
+    showSuccessToast
+  } = useToast();
   
   // Filter memories by category and search query
   useEffect(() => {
+    if (!memories.length) return;
+    
     let filtered = memories;
     
     // Filter by category if not "all"
@@ -51,7 +77,14 @@ const Browse = () => {
     }
     
     setFilteredMemories(filtered);
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory, searchQuery, memories, categories]);
+  
+  // Set initial filtered memories
+  useEffect(() => {
+    if (memories.length) {
+      setFilteredMemories(memories);
+    }
+  }, [memories]);
   
   const handleCategoryChange = (categoryId: string) => {
     setActiveCategory(categoryId);
@@ -62,8 +95,8 @@ const Browse = () => {
   };
   
   const handleAddToCollection = (id: string) => {
-    console.log('Added to collection:', id);
-    // In a real app, this would add the item to the user's collection
+    addToCollection(id);
+    showSuccessToast(`Added to your collection!`);
   };
   
   const handleShare = (id: string) => {
@@ -73,6 +106,32 @@ const Browse = () => {
   
   // Get current category
   const currentCategory = allCategories.find(cat => cat.id === activeCategory);
+  
+  // Loading state
+  const isLoading = isCategoriesLoading || isItemsLoading;
+  
+  // Error state
+  const hasError = categoriesError || itemsError;
+  
+  // If there's an error, show error message
+  if (hasError && !isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center p-8 max-w-md">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Data</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            {categoriesError?.message || itemsError?.message || 'Failed to load data from the server.'}
+          </p>
+          <Button 
+            variant="primary" 
+            onClick={() => window.location.reload()}
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -118,7 +177,7 @@ const Browse = () => {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, index) => (
-              <div key={index} className="bg-gray-200 dark:bg-gray-700 rounded-lg h-80 animate-pulse"></div>
+              <Skeleton key={index} className="h-80 rounded-lg" />
             ))}
           </div>
         ) : (
@@ -133,6 +192,8 @@ const Browse = () => {
                     imageUrl={memory.imageUrl}
                     category={memory.category}
                     year={memory.year}
+                    isInCollection={isInCollection(memory.id)}
+                    isRecentlyAdded={isRecentlyAdded(memory.id)}
                     onAddToCollection={handleAddToCollection}
                     onShare={handleShare}
                   />
