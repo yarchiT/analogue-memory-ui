@@ -1,96 +1,158 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { memories, categories } from '../mocks/memories';
+import MemoryCard from '../components/MemoryCard';
+import SearchBar from '../components/SearchBar';
+import CategoryHeader from '../components/CategoryHeader';
 
 const Browse = () => {
+  const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredMemories, setFilteredMemories] = useState(memories);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Placeholder categories
-  const categories = [
-    { id: 'all', name: 'All Items' },
-    { id: 'toys', name: 'Toys & Games' },
-    { id: 'music', name: 'Music' },
-    { id: 'movies', name: 'Movies & TV' },
-    { id: 'tech', name: 'Technology' },
-    { id: 'fashion', name: 'Fashion' },
-    { id: 'food', name: 'Food & Drinks' },
+  // Add "All" category to the list
+  const allCategories = [
+    { id: 'all', name: 'All Items', description: 'Browse all memories across categories' },
+    ...categories
   ];
   
-  // Placeholder items
-  const items = [
-    { id: 1, name: 'Tamagotchi', category: 'toys', year: '1996', imageUrl: 'https://placehold.co/300x300/e0f2fe/0284c7?text=Tamagotchi' },
-    { id: 2, name: 'Walkman', category: 'tech', year: '1979', imageUrl: 'https://placehold.co/300x300/e0f2fe/0284c7?text=Walkman' },
-    { id: 3, name: 'Rubik\'s Cube', category: 'toys', year: '1974', imageUrl: 'https://placehold.co/300x300/e0f2fe/0284c7?text=Rubik%27s+Cube' },
-    { id: 4, name: 'Nirvana - Nevermind', category: 'music', year: '1991', imageUrl: 'https://placehold.co/300x300/e0f2fe/0284c7?text=Nevermind' },
-    { id: 5, name: 'The Breakfast Club', category: 'movies', year: '1985', imageUrl: 'https://placehold.co/300x300/e0f2fe/0284c7?text=Breakfast+Club' },
-    { id: 6, name: 'Polaroid Camera', category: 'tech', year: '1948', imageUrl: 'https://placehold.co/300x300/e0f2fe/0284c7?text=Polaroid' },
-  ];
+  // Simulate loading state
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, [activeCategory]);
   
-  const filteredItems = activeCategory === 'all' 
-    ? items 
-    : items.filter(item => item.category === activeCategory);
+  // Filter memories by category and search query
+  useEffect(() => {
+    let filtered = memories;
+    
+    // Filter by category if not "all"
+    if (activeCategory !== 'all') {
+      const category = categories.find(cat => cat.id === activeCategory);
+      filtered = memories.filter(memory => 
+        memory.category.toLowerCase() === category?.name.toLowerCase()
+      );
+    }
+    
+    // Filter by search query if provided
+    if (searchQuery) {
+      filtered = filtered.filter(memory => 
+        memory.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        memory.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        memory.year.toString().includes(searchQuery) ||
+        memory.category.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    setFilteredMemories(filtered);
+  }, [activeCategory, searchQuery]);
   
   const handleCategoryChange = (categoryId: string) => {
     setActiveCategory(categoryId);
   };
   
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+  
+  const handleAddToCollection = (id: string) => {
+    console.log('Added to collection:', id);
+    // In a real app, this would add the item to the user's collection
+  };
+  
+  const handleShare = (id: string) => {
+    console.log('Shared:', id);
+    // In a real app, this would open a share dialog
+  };
+  
+  // Get current category
+  const currentCategory = allCategories.find(cat => cat.id === activeCategory);
+  
   return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-8">Browse Memories</h1>
-      
-      {/* Category filters */}
-      <div className="mb-8 overflow-x-auto">
-        <div className="flex space-x-2 pb-2">
-          {categories.map(category => (
-            <button
-              key={category.id}
-              onClick={() => handleCategoryChange(category.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                activeCategory === category.id
-                  ? 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200'
-                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700'
-              }`}
-              aria-pressed={activeCategory === category.id}
-            >
-              {category.name}
-            </button>
-          ))}
-        </div>
-      </div>
-      
-      {/* Search bar */}
-      <div className="mb-8">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search memories..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700"
-            aria-label="Search memories"
-          />
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-            <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <CategoryHeader
+        title="Browse Memories"
+        description={currentCategory?.description}
+        showBackButton={true}
+        backButtonLabel="Home"
+        backUrl="/"
+      >
+        {/* Category filters */}
+        <div className="mb-6 overflow-x-auto">
+          <div className="flex space-x-2 pb-2">
+            {allCategories.map(category => (
+              <button
+                key={category.id}
+                onClick={() => handleCategoryChange(category.id)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-300 ${
+                  activeCategory === category.id
+                    ? 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200'
+                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700'
+                }`}
+                aria-pressed={activeCategory === category.id}
+              >
+                {category.name}
+              </button>
+            ))}
           </div>
         </div>
-      </div>
+        
+        {/* Search bar */}
+        <div className="max-w-2xl">
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder={`Search ${activeCategory === 'all' ? 'all memories' : `in ${currentCategory?.name}`}...`}
+            isLoading={isLoading}
+          />
+        </div>
+      </CategoryHeader>
       
       {/* Items grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {filteredItems.map(item => (
-          <div key={item.id} className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow">
-            <img src={item.imageUrl} alt={item.name} className="w-full h-48 object-cover" />
-            <div className="p-4">
-              <h3 className="text-lg font-medium">{item.name}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{item.year}</p>
-            </div>
+      <div className="container mx-auto px-4 py-8">
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="bg-gray-200 dark:bg-gray-700 rounded-lg h-80 animate-pulse"></div>
+            ))}
           </div>
-        ))}
+        ) : (
+          <>
+            {filteredMemories.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {filteredMemories.map(memory => (
+                  <MemoryCard
+                    key={memory.id}
+                    id={memory.id}
+                    title={memory.title}
+                    imageUrl={memory.imageUrl}
+                    category={memory.category}
+                    year={memory.year}
+                    onAddToCollection={handleAddToCollection}
+                    onShare={handleShare}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  No memories found
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                  {searchQuery 
+                    ? `No results found for "${searchQuery}" ${activeCategory !== 'all' ? `in ${currentCategory?.name}` : ''}.` 
+                    : `There are no memories ${activeCategory !== 'all' ? `in the ${currentCategory?.name} category` : ''} yet.`}
+                </p>
+              </div>
+            )}
+          </>
+        )}
       </div>
-      
-      {filteredItems.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">No items found in this category.</p>
-        </div>
-      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import MemoryCard from '../components/MemoryCard';
 import ScrollableRow from '../components/ScrollableRow';
@@ -8,6 +8,7 @@ import ResponsiveImage from '../components/ResponsiveImage';
 import { memories, categories, popularSearches } from '../mocks/memories';
 
 const Home = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [featuredMemory, setFeaturedMemory] = useState(memories[0]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,9 +54,8 @@ const Home = () => {
     // In a real app, this would open a share dialog
   };
   
-  const handleSeeAll = (category: string) => {
-    console.log('See all for category:', category);
-    // In a real app, this would navigate to the category page
+  const handleCategoryClick = (categoryId: string) => {
+    navigate(`/category/${categoryId}`);
   };
   
   // Group memories by category
@@ -147,7 +147,7 @@ const Home = () => {
             <Button 
               key={category.id}
               variant="outline"
-              onClick={() => handleSeeAll(category.name)}
+              onClick={() => handleCategoryClick(category.id)}
             >
               {category.name}
             </Button>
@@ -161,7 +161,8 @@ const Home = () => {
           <ScrollableRow 
             key={category.id}
             title={category.name}
-            onSeeAll={() => handleSeeAll(category.name)}
+            categoryId={category.id}
+            seeAllLabel="See All"
           >
             {category.items.map(memory => (
               <div key={memory.id} className="min-w-[250px] sm:min-w-[300px] flex-shrink-0 snap-start">

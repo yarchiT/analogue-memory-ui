@@ -1,4 +1,5 @@
 import { ReactNode, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import Button from './Button';
 
 export interface ScrollableRowProps {
@@ -6,13 +7,15 @@ export interface ScrollableRowProps {
   children: ReactNode;
   onSeeAll?: () => void;
   seeAllLabel?: string;
+  categoryId?: string;
 }
 
 const ScrollableRow = ({
   title,
   children,
   onSeeAll,
-  seeAllLabel = 'See All'
+  seeAllLabel = 'See All',
+  categoryId
 }: ScrollableRowProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
@@ -41,7 +44,23 @@ const ScrollableRow = ({
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{title}</h2>
         
-        {onSeeAll && (
+        {categoryId ? (
+          <Link to={`/category/${categoryId}`} className="inline-block">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              aria-label={`See all ${title}`}
+              icon={
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+              }
+              iconPosition="right"
+            >
+              {seeAllLabel}
+            </Button>
+          </Link>
+        ) : onSeeAll && (
           <Button 
             variant="ghost" 
             size="sm" 
