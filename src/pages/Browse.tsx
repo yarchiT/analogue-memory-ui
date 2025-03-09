@@ -79,13 +79,6 @@ const Browse = () => {
     setFilteredMemories(filtered);
   }, [activeCategory, searchQuery, memories, categories]);
   
-  // Set initial filtered memories
-  useEffect(() => {
-    if (memories.length) {
-      setFilteredMemories(memories);
-    }
-  }, [memories]);
-  
   const handleCategoryChange = (categoryId: string) => {
     setActiveCategory(categoryId);
   };

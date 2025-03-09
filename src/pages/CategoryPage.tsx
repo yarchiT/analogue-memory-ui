@@ -52,6 +52,8 @@ const CategoryPage = () => {
   
   // Filter memories by search query
   useEffect(() => {
+    if (!memories.length) return;
+    
     if (!searchQuery) {
       setFilteredMemories(memories);
       return;
@@ -66,11 +68,6 @@ const CategoryPage = () => {
     
     setFilteredMemories(filtered);
   }, [searchQuery, memories]);
-  
-  // Set initial filtered memories
-  useEffect(() => {
-    setFilteredMemories(memories);
-  }, [memories]);
   
   const handleSearch = (query: string) => {
     setSearchQuery(query);
