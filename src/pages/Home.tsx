@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import MemoryCard from '../components/MemoryCard';
@@ -39,8 +39,8 @@ const Home = () => {
   } = useApi(getAllItems);
   
   // Convert API data to frontend models
-  const categories = apiCategories?.map(mapApiCategoryToCategory) || [];
-  const memories = apiItems?.map(mapApiItemToMemory) || [];
+  const categories = useMemo(() => apiCategories?.map(mapApiCategoryToCategory) || [], [apiCategories]);
+  const memories = useMemo(() => apiItems?.map(mapApiItemToMemory) || [], [apiItems]);
   
   // Custom hooks
   const { 
@@ -126,14 +126,16 @@ const Home = () => {
   };
   
   // Group memories by category
-  const memoriesByCategory = categories.map(category => {
-    return {
-      ...category,
-      items: memories.filter(memory => 
-        memory.category.toLowerCase() === category.name.toLowerCase()
-      )
-    };
-  }).filter(category => category.items.length > 0);
+  const memoriesByCategory = useMemo(() => {
+    return categories.map(category => {
+      return {
+        ...category,
+        items: memories.filter(memory => 
+          memory.category.toLowerCase() === category.name.toLowerCase()
+        )
+      };
+    }).filter(category => category.items.length > 0);
+  }, [categories, memories]);
   
   // Loading state
   const isLoading = isCategoriesLoading || isItemsLoading;

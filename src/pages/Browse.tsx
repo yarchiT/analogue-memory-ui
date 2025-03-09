@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MemoryCard from '../components/MemoryCard';
 import SearchBar from '../components/SearchBar';
@@ -33,13 +33,13 @@ const Browse = () => {
   
   // Convert API data to frontend models
   const categories = apiCategories?.map(mapApiCategoryToCategory) || [];
-  const memories = apiItems?.map(mapApiItemToMemory) || [];
+  const memories = useMemo(() => apiItems?.map(mapApiItemToMemory) || [], [apiItems]);
   
-  // Add "All" category to the list
-  const allCategories = [
+  // Add "All" category to the list - use useMemo to prevent recreation on every render
+  const allCategories = useMemo(() => [
     { id: 'all', name: 'All Items', description: 'Browse all memories across categories' },
     ...categories
-  ];
+  ], [categories]);
   
   // Custom hooks
   const { 
@@ -60,7 +60,7 @@ const Browse = () => {
     
     // Filter by category if not "all"
     if (activeCategory !== 'all') {
-      const category = categories.find(cat => cat.id === activeCategory);
+      const category = allCategories.find(cat => cat.id === activeCategory);
       filtered = memories.filter(memory => 
         memory.category.toLowerCase() === category?.name.toLowerCase()
       );
@@ -77,7 +77,7 @@ const Browse = () => {
     }
     
     setFilteredMemories(filtered);
-  }, [activeCategory, searchQuery, memories, categories]);
+  }, [activeCategory, searchQuery, memories, allCategories]);
   
   const handleCategoryChange = (categoryId: string) => {
     setActiveCategory(categoryId);

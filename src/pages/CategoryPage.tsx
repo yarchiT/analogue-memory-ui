@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MemoryCard from '../components/MemoryCard';
 import Button from '../components/Button';
@@ -37,7 +37,7 @@ const CategoryPage = () => {
   
   // Convert API data to frontend models
   const category = apiCategory ? mapApiCategoryToCategory(apiCategory) : undefined;
-  const memories = apiItems?.map(mapApiItemToMemory) || [];
+  const memories = useMemo(() => apiItems?.map(mapApiItemToMemory) || [], [apiItems]);
   
   // Custom hooks
   const { 
