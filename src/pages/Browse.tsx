@@ -25,7 +25,7 @@ const Browse = () => {
   } = useApi(getAllCategories);
   
   const { 
-    data: apiItems, 
+    data: apiItemsResponse, 
     isLoading: isItemsLoading, 
     error: itemsError 
   } = useApi(getAllItems);
@@ -36,10 +36,11 @@ const Browse = () => {
     [apiCategories]
   );
   
-  const memories = useMemo(() => 
-    apiItems?.map(mapApiItemToMemory) || [], 
-    [apiItems]
-  );
+  const memories = useMemo(() => {
+    // Check if apiItemsResponse exists and has an items property
+    const apiItems = apiItemsResponse?.items || [];
+    return apiItems.map(mapApiItemToMemory) || [];
+  }, [apiItemsResponse]);
   
   // Add "All" category to the list - use useMemo to prevent recreation on every render
   const allCategories = useMemo(() => [

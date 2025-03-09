@@ -27,7 +27,7 @@ const CategoryPage = () => {
   });
   
   const { 
-    data: apiItems, 
+    data: apiItemsResponse, 
     isLoading: isItemsLoading, 
     error: itemsError 
   } = useApi(() => getItemsByCategory(categoryId || ''), {
@@ -40,10 +40,11 @@ const CategoryPage = () => {
     [apiCategory]
   );
   
-  const memories = useMemo(() => 
-    apiItems?.map(mapApiItemToMemory) || [], 
-    [apiItems]
-  );
+  const memories = useMemo(() => {
+    // Check if apiItemsResponse exists and has an items property
+    const apiItems = apiItemsResponse?.items || [];
+    return apiItems.map(mapApiItemToMemory) || [];
+  }, [apiItemsResponse]);
   
   // Custom hooks
   const { 

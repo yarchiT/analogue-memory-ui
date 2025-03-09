@@ -33,14 +33,18 @@ const Home = () => {
   } = useApi(getAllCategories);
   
   const { 
-    data: apiItems, 
+    data: apiItemsResponse, 
     isLoading: isItemsLoading, 
     error: itemsError 
   } = useApi(getAllItems);
   
   // Convert API data to frontend models
   const categories = useMemo(() => apiCategories?.map(mapApiCategoryToCategory) || [], [apiCategories]);
-  const memories = useMemo(() => apiItems?.map(mapApiItemToMemory) || [], [apiItems]);
+  const memories = useMemo(() => {
+    // Check if apiItemsResponse exists and has an items property
+    const apiItems = apiItemsResponse?.items || [];
+    return apiItems.map(mapApiItemToMemory) || [];
+  }, [apiItemsResponse]);
   
   // Custom hooks
   const { 
