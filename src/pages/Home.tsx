@@ -65,27 +65,22 @@ const Home = () => {
     showSuccessToast
   } = useToast();
   
-  // Set featured memory when data is loaded
+  // Set featured memory when data is loaded - only once when memories are first available
   useEffect(() => {
     if (memories.length > 0 && !featuredMemory) {
       setFeaturedMemory(memories[0]);
     }
-  }, [memories, featuredMemory]);
+  }, [memories]); // Remove featuredMemory from dependencies
   
   // Randomly select a featured memory every 30 seconds
   useEffect(() => {
     if (memories.length === 0) return;
     
-    const selectRandomFeaturedMemory = () => {
+    // Only set up the interval, don't select immediately
+    const interval = setInterval(() => {
       const randomIndex = Math.floor(Math.random() * memories.length);
       setFeaturedMemory(memories[randomIndex]);
-    };
-    
-    // Initial selection
-    selectRandomFeaturedMemory();
-    
-    // Set interval for changing featured memory
-    const interval = setInterval(selectRandomFeaturedMemory, 30000);
+    }, 30000);
     
     return () => clearInterval(interval);
   }, [memories]);
