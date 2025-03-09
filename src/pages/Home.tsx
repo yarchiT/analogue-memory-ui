@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import MemoryCard from '../components/MemoryCard';
@@ -85,45 +85,45 @@ const Home = () => {
     return () => clearInterval(interval);
   }, [memories]);
   
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     console.log('Searching for:', query);
     // In a real app, this would navigate to search results
-  };
+  }, []);
   
-  const handleAddToCollection = (id: string) => {
+  const handleAddToCollection = useCallback((id: string) => {
     addToCollection(id);
     showSuccessToast(`Added to your collection!`);
-  };
+  }, [addToCollection, showSuccessToast]);
   
-  const handleShare = (id: string) => {
+  const handleShare = useCallback((id: string) => {
     openShareModal(id);
-  };
+  }, [openShareModal]);
   
-  const handleCardClick = (id: string) => {
+  const handleCardClick = useCallback((id: string) => {
     setSelectedMemory(id);
-  };
+  }, []);
   
-  const handleCloseDetail = () => {
+  const handleCloseDetail = useCallback(() => {
     setSelectedMemory(null);
-  };
+  }, []);
   
-  const handleCategoryClick = (categoryId: string) => {
+  const handleCategoryClick = useCallback((categoryId: string) => {
     navigate(`/category/${categoryId}`);
-  };
+  }, [navigate]);
   
   // Get the selected memory details
-  const getSelectedMemoryDetails = () => {
+  const getSelectedMemoryDetails = useCallback(() => {
     if (!selectedMemory) return null;
     return memories.find(memory => memory.id === selectedMemory);
-  };
+  }, [selectedMemory, memories]);
   
   // Get similar items for the selected memory
-  const getSimilarItems = () => {
+  const getSimilarItems = useCallback(() => {
     const memory = getSelectedMemoryDetails();
     if (!memory) return [];
     return findSimilarItems(memory, memories);
-  };
+  }, [getSelectedMemoryDetails, memories]);
   
   // Group memories by category
   const memoriesByCategory = useMemo(() => {

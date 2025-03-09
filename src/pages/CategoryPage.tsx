@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MemoryCard from '../components/MemoryCard';
 import Button from '../components/Button';
@@ -69,19 +69,19 @@ const CategoryPage = () => {
     setFilteredMemories(filtered);
   }, [searchQuery, memories]);
   
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-  };
+  }, []);
   
-  const handleAddToCollection = (id: string) => {
+  const handleAddToCollection = useCallback((id: string) => {
     addToCollection(id);
     showSuccessToast(`Added to your collection!`);
-  };
+  }, [addToCollection, showSuccessToast]);
   
-  const handleShare = (id: string) => {
+  const handleShare = useCallback((id: string) => {
     console.log('Shared:', id);
     // In a real app, this would open a share dialog
-  };
+  }, []);
   
   // Loading state
   const isLoading = isCategoryLoading || isItemsLoading;

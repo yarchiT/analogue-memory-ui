@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MemoryCard from '../components/MemoryCard';
 import SearchBar from '../components/SearchBar';
@@ -61,44 +61,51 @@ const Browse = () => {
     // Filter by category if not "all"
     if (activeCategory !== 'all') {
       const category = allCategories.find(cat => cat.id === activeCategory);
-      filtered = memories.filter(memory => 
-        memory.category.toLowerCase() === category?.name.toLowerCase()
-      );
+      if (category) {
+        const categoryNameLower = category.name.toLowerCase();
+        filtered = memories.filter(memory => 
+          memory.category.toLowerCase() === categoryNameLower
+        );
+      }
     }
     
     // Filter by search query if provided
     if (searchQuery) {
+      const searchQueryLower = searchQuery.toLowerCase();
       filtered = filtered.filter(memory => 
-        memory.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        memory.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        memory.title.toLowerCase().includes(searchQueryLower) ||
+        memory.description?.toLowerCase().includes(searchQueryLower) ||
         memory.year.toString().includes(searchQuery) ||
-        memory.category.toLowerCase().includes(searchQuery.toLowerCase())
+        memory.category.toLowerCase().includes(searchQueryLower)
       );
     }
     
     setFilteredMemories(filtered);
   }, [activeCategory, searchQuery, memories, allCategories]);
   
-  const handleCategoryChange = (categoryId: string) => {
+  const handleCategoryChange = useCallback((categoryId: string) => {
     setActiveCategory(categoryId);
-  };
+  }, []);
   
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-  };
+  }, []);
   
-  const handleAddToCollection = (id: string) => {
+  const handleAddToCollection = useCallback((id: string) => {
     addToCollection(id);
     showSuccessToast(`Added to your collection!`);
-  };
+  }, [addToCollection, showSuccessToast]);
   
-  const handleShare = (id: string) => {
+  const handleShare = useCallback((id: string) => {
     console.log('Shared:', id);
     // In a real app, this would open a share dialog
-  };
+  }, []);
   
   // Get current category
-  const currentCategory = allCategories.find(cat => cat.id === activeCategory);
+  const currentCategory = useMemo(() => 
+    allCategories.find(cat => cat.id === activeCategory),
+    [allCategories, activeCategory]
+  );
   
   // Loading state
   const isLoading = isCategoriesLoading || isItemsLoading;
