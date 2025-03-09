@@ -1,50 +1,78 @@
-# React + TypeScript + Vite
+# Analogue Memory Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Analogue Memory is a platform that allows users to catalog and compare their nostalgic memories with others. This frontend application provides an intuitive interface for users to browse memory items, build their personal libraries, and find connections with other users through shared memories.
 
-Currently, two official plugins are available:
+## Project Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The Analogue Memory Frontend is built with:
+- React 18
+- TypeScript
+- Vite
+- TailwindCSS (for styling)
+- React Router (for navigation)
+- Cloudflare Pages (for deployment)
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+### Prerequisites
+- Node.js (v18 or higher)
+- Yarn package manager
 
-- Configure the top-level `parserOptions` property like this:
+### Installation
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/analogue-memory-frontend.git
+cd analogue-memory-frontend
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+2. Install dependencies:
+```bash
+yarn install
 ```
+
+3. Start the development server:
+```bash
+yarn dev
+```
+
+4. Open your browser and navigate to `http://localhost:5173`
+
+## Project Structure
+
+```
+analogue-memory-frontend/
+├── public/              # Static assets
+├── src/
+│   ├── assets/          # Images, fonts, and other assets
+│   ├── components/      # Reusable UI components
+│   ├── hooks/           # Custom React hooks
+│   ├── pages/           # Page components
+│   ├── services/        # API services and utilities
+│   ├── store/           # Global state management
+│   ├── types/           # TypeScript type definitions
+│   ├── utils/           # Utility functions
+│   ├── App.tsx          # Main application component
+│   └── main.tsx         # Application entry point
+├── .gitignore           # Git ignore file
+├── index.html           # HTML entry point
+├── package.json         # Project dependencies and scripts
+├── tsconfig.json        # TypeScript configuration
+└── vite.config.ts       # Vite configuration
+```
+
+## Available Scripts
+
+- `yarn dev` - Start the development server
+- `yarn build` - Build the application for production
+- `yarn lint` - Run ESLint to check for code issues
+- `yarn preview` - Preview the production build locally
+- `yarn deploy` - Deploy the application to Cloudflare Pages
+
+## Deployment
+
+The application is deployed to Cloudflare Pages. Each commit to the main branch triggers a new deployment.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
