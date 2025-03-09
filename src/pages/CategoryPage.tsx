@@ -16,7 +16,6 @@ const CategoryPage = () => {
   const { categoryId } = useParams<{ categoryId: string }>();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredMemories, setFilteredMemories] = useState<any[]>([]);
   
   // API data fetching
   const { 
@@ -36,8 +35,15 @@ const CategoryPage = () => {
   });
   
   // Convert API data to frontend models
-  const category = apiCategory ? mapApiCategoryToCategory(apiCategory) : undefined;
-  const memories = useMemo(() => apiItems?.map(mapApiItemToMemory) || [], [apiItems]);
+  const category = useMemo(() => 
+    apiCategory ? mapApiCategoryToCategory(apiCategory) : undefined, 
+    [apiCategory]
+  );
+  
+  const memories = useMemo(() => 
+    apiItems?.map(mapApiItemToMemory) || [], 
+    [apiItems]
+  );
   
   // Custom hooks
   const { 
@@ -50,23 +56,21 @@ const CategoryPage = () => {
     showSuccessToast
   } = useToast();
   
-  // Filter memories by search query
-  useEffect(() => {
-    if (!memories.length) return;
+  // Filter memories by search query - using useMemo instead of useEffect
+  const filteredMemories = useMemo(() => {
+    if (!memories.length) return [];
     
     if (!searchQuery) {
-      setFilteredMemories(memories);
-      return;
+      return memories;
     }
     
     // Filter by search query
-    const filtered = memories.filter(memory => 
-      memory.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      memory.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const searchQueryLower = searchQuery.toLowerCase();
+    return memories.filter(memory => 
+      memory.title.toLowerCase().includes(searchQueryLower) ||
+      memory.description?.toLowerCase().includes(searchQueryLower) ||
       memory.year.toString().includes(searchQuery)
     );
-    
-    setFilteredMemories(filtered);
   }, [searchQuery, memories]);
   
   const handleSearch = useCallback((query: string) => {

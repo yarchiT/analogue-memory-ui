@@ -16,7 +16,6 @@ const Browse = () => {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredMemories, setFilteredMemories] = useState<any[]>([]);
   
   // API data fetching
   const { 
@@ -32,8 +31,15 @@ const Browse = () => {
   } = useApi(getAllItems);
   
   // Convert API data to frontend models
-  const categories = apiCategories?.map(mapApiCategoryToCategory) || [];
-  const memories = useMemo(() => apiItems?.map(mapApiItemToMemory) || [], [apiItems]);
+  const categories = useMemo(() => 
+    apiCategories?.map(mapApiCategoryToCategory) || [], 
+    [apiCategories]
+  );
+  
+  const memories = useMemo(() => 
+    apiItems?.map(mapApiItemToMemory) || [], 
+    [apiItems]
+  );
   
   // Add "All" category to the list - use useMemo to prevent recreation on every render
   const allCategories = useMemo(() => [
@@ -52,9 +58,15 @@ const Browse = () => {
     showSuccessToast
   } = useToast();
   
-  // Filter memories by category and search query
-  useEffect(() => {
-    if (!memories.length) return;
+  // Get current category
+  const currentCategory = useMemo(() => 
+    allCategories.find(cat => cat.id === activeCategory),
+    [allCategories, activeCategory]
+  );
+  
+  // Filter memories - using useMemo instead of useEffect to avoid state updates
+  const filteredMemories = useMemo(() => {
+    if (!memories.length) return [];
     
     let filtered = memories;
     
@@ -80,7 +92,7 @@ const Browse = () => {
       );
     }
     
-    setFilteredMemories(filtered);
+    return filtered;
   }, [activeCategory, searchQuery, memories, allCategories]);
   
   const handleCategoryChange = useCallback((categoryId: string) => {
@@ -100,12 +112,6 @@ const Browse = () => {
     console.log('Shared:', id);
     // In a real app, this would open a share dialog
   }, []);
-  
-  // Get current category
-  const currentCategory = useMemo(() => 
-    allCategories.find(cat => cat.id === activeCategory),
-    [allCategories, activeCategory]
-  );
   
   // Loading state
   const isLoading = isCategoriesLoading || isItemsLoading;
