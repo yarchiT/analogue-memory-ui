@@ -3,7 +3,7 @@
  * Handles all API requests to the backend
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 const ASSET_URL = import.meta.env.VITE_ASSET_URL || 'http://localhost:3000/assets';
 
 /**
@@ -11,12 +11,33 @@ const ASSET_URL = import.meta.env.VITE_ASSET_URL || 'http://localhost:3000/asset
  */
 export class ApiError extends Error {
   status: number;
+  errors?: Array<{ message: string; path: string[] }>;
   
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, errors?: Array<{ message: string; path: string[] }>) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.errors = errors;
   }
+}
+
+/**
+ * Standard API response format
+ */
+export interface ApiResponse<T> {
+  status: 'success' | 'fail' | 'error';
+  data?: T;
+  message?: string;
+  results?: number;
+  pagination?: {
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+  errors?: Array<{ message: string; path: string[] }>;
 }
 
 /**
@@ -25,14 +46,22 @@ export class ApiError extends Error {
 async function fetchApi<T>(
   endpoint: string, 
   options: RequestInit = {}
-): Promise<T> {
-  const url = `${API_URL}${endpoint}`;
+): Promise<ApiResponse<T>> {
+  const url = `${API_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {})
+  };
+
+  // Add authorization header if token exists
+  const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
   
   const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
     ...options,
   });
 
@@ -41,11 +70,12 @@ async function fetchApi<T>(
   if (!response.ok) {
     throw new ApiError(
       data.message || 'Something went wrong',
-      response.status
+      response.status,
+      data.errors
     );
   }
 
-  return data;
+  return data as ApiResponse<T>;
 }
 
 /**
@@ -53,7 +83,7 @@ async function fetchApi<T>(
  */
 export const checkApiHealth = async () => {
   try {
-    const response = await fetch(`${API_URL.replace('/api', '')}/health`);
+    const response = await fetch(`${API_URL}/health`);
     return await response.json();
   } catch (error) {
     console.error('API Health check failed:', error);

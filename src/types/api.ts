@@ -4,10 +4,19 @@
 
 // Base API response type
 export interface ApiResponse<T> {
-  status: 'success' | 'error';
+  status: 'success' | 'fail' | 'error';
   data?: T;
   message?: string;
   results?: number;
+  pagination?: {
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+  errors?: Array<{ message: string; path: string[] }>;
 }
 
 // Category types
@@ -39,33 +48,64 @@ export interface MemoryItemsResponse {
   items: MemoryItem[];
 }
 
-// User collection types
-export interface CollectionItem extends MemoryItem {
-  addedAt: string;
-  notes?: string;
+// User types
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  birthYear?: number;
+  location?: {
+    country?: string;
+    region?: string;
+  };
+  joinDate: string;
+  collection?: Array<{
+    itemId: string;
+    dateAdded: string;
+    personalNote?: string;
+  }>;
+  following?: string[];
+  followers?: string[];
 }
 
-export interface CollectionResponse {
-  items: CollectionItem[];
+export interface AuthResponse {
+  token: string;
+  user: User;
+}
+
+export interface UserProfileResponse {
+  user: User;
+}
+
+// Collection types
+export interface CollectionItem {
+  itemId: string;
+  dateAdded: string;
+  personalNote?: string;
+}
+
+export interface CollectionWithItems {
+  items: Array<MemoryItem & {
+    dateAdded: string;
+    personalNote?: string;
+  }>;
 }
 
 // Health check response
 export interface HealthCheckResponse {
   status: string;
   message: string;
-  timestamp: string;
-  environment: string;
 }
 
 // Search response
 export interface SearchResponse {
   items: MemoryItem[];
-  query: string;
 }
 
 // Error response
 export interface ErrorResponse {
-  status: 'error';
+  status: 'fail' | 'error';
   message: string;
-  code?: string;
+  errors?: Array<{ message: string; path: string[] }>;
+  stack?: string;
 } 

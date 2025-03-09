@@ -39,4 +39,17 @@ export const mapMemoryToApiItem = (memory: Memory): Partial<MemoryItem> => {
     year: memory.year,
     imageUrl: memory.imageUrl,
   };
+};
+
+/**
+ * Map collection item with memory details to frontend memory model
+ */
+export const mapCollectionItemToMemory = (
+  item: MemoryItem & { dateAdded: string; personalNote?: string }
+): Memory & { dateAdded: string; personalNote?: string } => {
+  return {
+    ...mapApiItemToMemory(item),
+    dateAdded: item.dateAdded,
+    personalNote: item.personalNote,
+  };
 }; 

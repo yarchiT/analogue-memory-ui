@@ -1,4 +1,5 @@
-import api from './api';
+import api, { ApiResponse } from './api';
+import { User, AuthResponse, UserProfileResponse } from '../types/api';
 
 // Types
 export interface LoginCredentials {
@@ -17,32 +18,8 @@ export interface RegisterCredentials {
   };
 }
 
-export interface User {
-  id: string;
-  username: string;
-  email: string;
-  birthYear?: number;
-  location?: {
-    country?: string;
-    region?: string;
-  };
-  joinDate: string;
-  collection?: Array<{
-    itemId: string;
-    dateAdded: string;
-    personalNote?: string;
-  }>;
-  following?: string[];
-  followers?: string[];
-}
-
-export interface AuthResponse {
-  status: string;
-  data: {
-    token: string;
-    user: User;
-  };
-}
+// Re-export User type from api.ts
+export type { User };
 
 // Token management
 const TOKEN_KEY = 'auth_token';
@@ -95,14 +72,14 @@ export const getRememberMe = (): boolean => {
 // Authentication API calls
 export const login = async (credentials: LoginCredentials, rememberMe: boolean = false): Promise<User> => {
   try {
-    const response = await api.post<AuthResponse>('/users/login', credentials);
+    const response = await api.post<ApiResponse<AuthResponse>>('/users/login', credentials);
     
     if (response.status === 'success' && response.data) {
-      const { token, user } = response.data;
-      setToken(token, rememberMe);
-      setUser(user, rememberMe);
+      const authData = response.data as unknown as AuthResponse;
+      setToken(authData.token, rememberMe);
+      setUser(authData.user, rememberMe);
       setRememberMe(rememberMe);
-      return user;
+      return authData.user;
     }
     
     throw new Error('Invalid response format');
@@ -114,13 +91,13 @@ export const login = async (credentials: LoginCredentials, rememberMe: boolean =
 
 export const register = async (credentials: RegisterCredentials): Promise<User> => {
   try {
-    const response = await api.post<AuthResponse>('/users/register', credentials);
+    const response = await api.post<ApiResponse<AuthResponse>>('/users/register', credentials);
     
     if (response.status === 'success' && response.data) {
-      const { token, user } = response.data;
-      setToken(token);
-      setUser(user);
-      return user;
+      const authData = response.data as unknown as AuthResponse;
+      setToken(authData.token);
+      setUser(authData.user);
+      return authData.user;
     }
     
     throw new Error('Invalid response format');
@@ -139,6 +116,25 @@ export const isAuthenticated = (): boolean => {
   return !!getToken();
 };
 
+export const getUserProfile = async (): Promise<User | null> => {
+  try {
+    const token = getToken();
+    if (!token) return null;
+    
+    const response = await api.get<ApiResponse<UserProfileResponse>>('/users/profile');
+    
+    if (response.status === 'success' && response.data) {
+      const profileData = response.data as unknown as UserProfileResponse;
+      return profileData.user;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Failed to fetch user profile:', error);
+    return null;
+  }
+};
+
 export default {
   login,
   register,
@@ -146,4 +142,5 @@ export default {
   getToken,
   getUser,
   isAuthenticated,
+  getUserProfile,
 }; 
