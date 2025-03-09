@@ -43,13 +43,15 @@ Check file .project-overview.md for the project overview.
 
 ### Task Management
 Check file .cursor-tasks.md for the task management. Start woring on the first uncompleted tasks.
-After completing a task, commit all changes and push them to the github repo:
+Alaways try to run the project after completing a task to see if it works as expected.
+yarn dev.
+
+After completing a task, commit all changes:
 ```bash
 git add .
 git commit -m "Commit message"
-git push
 ```
 
-Then mark the current task as completed.
+Then mark the current checkpoint part as completed in the .cursor-tasks.md file.
 Ask the the user if you can proceed to the next task.
 
